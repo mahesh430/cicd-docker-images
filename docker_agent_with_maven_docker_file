@@ -1,0 +1,29 @@
+# Use a base image with Java (JDK 11) installed
+FROM openjdk:11-jdk-slim
+
+# Set environment variables for Maven version and installation paths
+ENV MAVEN_VERSION 3.9.5
+ENV MAVEN_HOME /usr/share/maven
+RUN apt-get -y update
+RUN apt-get -y install git
+# Install Maven, Docker CLI, Git, and Trivy
+RUN apt-get update \
+    && apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add - \
+    && add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
+    && apt-get update \
+    && apt-get install -y docker-ce-cli \
+    && mkdir -p /usr/share/maven /usr/share/maven/ref \
+    && curl -fsSL -o /tmp/apache-maven.tar.gz https://dlcdn.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+    && tar -xzf /tmp/apache-maven.tar.gz -C /usr/share/maven --strip-components=1 \
+    && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn \
+    && curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh \
+    # Add Trivy's installation directory to PATH
+    && echo "export PATH=\$PATH:/root/.local/bin" >> ~/.bashrc
+RUN echo "export PATH=\$PATH:/root/.local/bin" >> ~/.bashrc
+# Apply PATH change for current shell session
+ENV PATH="${PATH}:/root/.local/bin"
+
+# Define working directory.
+WORKDIR /app
+          
